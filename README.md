@@ -4,9 +4,9 @@
 
 ## 演示
 
-[![演示：代码做视频的 9 种技术（手绘版）](demo/preview.gif)](https://github.com/zephyrwang6/space-handdrawn-motion-video/releases/download/v0.1.0/demo-codemotion.mp4)
+[![演示：代码做视频的 9 种技术（手绘版）](demo/preview.gif)](https://github.com/SpaceZephyr/space-handdrawn-motion-video/releases/download/v0.1.0/demo-codemotion.mp4)
 
-点上面的动图看完整成片（3 分 33 秒，1080p，带配音和配乐）：[demo-codemotion.mp4](https://github.com/zephyrwang6/space-handdrawn-motion-video/releases/download/v0.1.0/demo-codemotion.mp4)。这条是用本 Skill 把一篇文章做成的讲解视频，稿子和每场画面在 [examples/codemotion](examples/codemotion)。
+点上面的动图看完整成片（3 分 33 秒，1080p，带配音和配乐）：[demo-codemotion.mp4](https://github.com/SpaceZephyr/space-handdrawn-motion-video/releases/download/v0.1.0/demo-codemotion.mp4)。这条是用本 Skill 把一篇文章做成的讲解视频，稿子和每场画面在 [examples/codemotion](examples/codemotion)。
 
 ## 能做什么
 
@@ -25,7 +25,7 @@
 ## 安装
 
 ```bash
-git clone https://github.com/zephyrwang6/space-handdrawn-motion-video ~/.claude/skills/space-handdrawn-motion-video
+git clone https://github.com/SpaceZephyr/space-handdrawn-motion-video ~/.claude/skills/space-handdrawn-motion-video
 cd ~/.claude/skills/space-handdrawn-motion-video
 npm i --prefix scripts                 # puppeteer-core、roughjs
 bash scripts/assets/fetch_audio.sh     # 下载配乐和音效（Mixkit）
