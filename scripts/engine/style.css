@@ -1,0 +1,65 @@
+/* 白板手绘风格。颜色和尺寸由 build.mjs 按 config.json 注入到 :root（--accent、--W、--H） */
+@font-face { font-family: "Xiaolai"; src: url("fonts/Xiaolai-Regular.ttf"); font-display: block; }
+:root { --ink: #1f1f22; --accent: #2456F5; --soft: #55555c; --paper: #FDFDFB; --line: #d9d6cf; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { overflow: hidden; background: var(--paper); }
+body { font-family: "Xiaolai", "Hannotate SC", sans-serif; color: var(--ink); position: relative; }
+.scene { position: absolute; inset: 0; display: none; }
+
+/* 角标 + 大标题（横版、竖版位置不同） */
+.tag { position: absolute; font-size: 36px; color: var(--accent); display: flex; align-items: center; gap: 14px; white-space: nowrap; }
+.tag b { display: inline-grid; place-items: center; width: 52px; height: 52px; border: 3.5px solid var(--accent); border-radius: 48% 52% 46% 54% / 55% 45% 55% 45%; font-weight: 400; font-size: 30px; }
+.title { position: absolute; font-weight: 400; letter-spacing: 1px; line-height: 1.25; white-space: nowrap; }
+.title em, .accent { font-style: normal; color: var(--accent); }
+.land .tag { left: 110px; top: 64px; }
+.land .title { left: 110px; top: 116px; font-size: 76px; }
+.port .tag { left: 80px; top: 74px; }
+.port .title { left: 80px; top: 128px; font-size: 66px; white-space: normal; right: 60px; }
+
+/* 手写字 */
+.hand { font-size: 40px; color: var(--ink); white-space: nowrap; line-height: 1.25; }
+.hand.b, .b .hand { color: var(--accent); }
+.hand.s, .s .hand { font-size: 32px; color: var(--soft); }
+.hand.l, .l .hand { font-size: 56px; }
+.hand.xl, .xl .hand { font-size: 96px; }
+
+/* 字幕 */
+#cap { position: absolute; left: 0; right: 0; text-align: center; font-weight: 400; line-height: 1.35; color: var(--ink); }
+#capline { position: absolute; height: 4px; border-radius: 3px 1px 4px 2px; background: var(--line); transform: rotate(-1deg); }
+.land #cap { bottom: 40px; font-size: 44px; padding: 0 240px; }
+.land #capline { left: calc(50% - 80px); width: 160px; bottom: 112px; }
+.port #cap { top: calc(var(--H) - 172px); font-size: 46px; padding: 0 60px; }
+.port #capline { left: calc(50% - 70px); width: 140px; top: calc(var(--H) - 196px); }
+.nocap #cap, .nocap #capline { display: none; }
+#cap .c2 { font-family: "Xiaolai", sans-serif; color: var(--soft); margin-top: 4px; }
+.land #cap .c2 { font-size: 30px; }
+.port #cap .c2 { font-size: 30px; }
+.bi #capline { display: none; }
+.bi.land #cap { bottom: 28px; }
+.bi.port #cap { top: calc(var(--H) - 196px); }
+
+/* 跟着笔画走的马克笔 */
+#pen { position: absolute; left: 0; top: 0; width: 150px; height: 150px; pointer-events: none; z-index: 50; display: none; filter: drop-shadow(4px 8px 6px rgba(0,0,0,.18)); }
+
+/* 真实界面也画成手绘线框：不规则圆角粗边框，不用阴影 */
+.phone, .win, .card { position: absolute; background: #fff; overflow: hidden; border: 3.5px solid var(--ink); border-radius: 26px 8px 22px 10px / 10px 22px 8px 26px; }
+.phone { border-width: 6px; border-radius: 46px 34px 48px 36px / 36px 48px 34px 46px; }
+.ph-sb { height: 34px; display: flex; justify-content: space-between; align-items: center; padding: 0 22px; font-size: 16px; }
+.ph-sb i { width: 22px; height: 11px; border: 2px solid var(--ink); border-radius: 3px; }
+.ph-in { position: absolute; top: 34px; left: 0; right: 0; bottom: 0; }
+.win-bar { height: 52px; display: flex; align-items: center; padding: 0 18px; gap: 9px; border-bottom: 3px solid var(--ink); }
+.win-bar > i { width: 14px; height: 14px; border-radius: 50%; border: 2.5px solid var(--ink); }
+.win-url { margin-left: 22px; flex: 1; height: 32px; border: 2.5px solid var(--ink); border-radius: 10px 4px 9px 5px; font-size: 20px; color: #555; display: flex; align-items: center; padding: 0 14px; }
+.win-in { position: absolute; top: 52px; left: 0; right: 0; bottom: 0; overflow: hidden; }
+.card { position: relative; padding: 22px 26px; }
+.chip { display: inline-block; border: 2.5px solid var(--ink); border-radius: 30px 18px 26px 20px / 20px 26px 18px 30px; padding: 6px 18px; font-size: 26px; background: #fff; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn { display: inline-grid; place-items: center; background: var(--ink); color: #fff; border-radius: 14px 6px 12px 8px; padding: 12px 28px; font-size: 30px; }
+.btn.acc { background: var(--accent); }
+.bubble { position: absolute; border-radius: 24px 24px 24px 6px; padding: 16px 24px; font-size: 28px; line-height: 1.45; border: 3px solid var(--ink); background: #fff; }
+.bubble.me { border-radius: 24px 24px 6px 24px; background: var(--ink); color: #fff; }
+.shot { border: 3px solid var(--ink); border-radius: 6px 3px 7px 2px; overflow: hidden; background: #fff; }
+.note { position: absolute; padding: 22px 26px; background: #FFF3A8; font-size: 32px; line-height: 1.35; box-shadow: 2px 6px 0 rgba(0,0,0,.06); }
+.mono { font-family: "Xiaolai", "SF Mono", monospace; }
+/* 视频片段下面的出处小字 */
+.clip-src { position: absolute; right: 4px; bottom: -40px; font-family: "Xiaolai", sans-serif; font-size: 24px; color: #8d8d94; white-space: nowrap; }

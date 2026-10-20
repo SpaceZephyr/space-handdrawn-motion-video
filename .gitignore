@@ -1,0 +1,10 @@
+node_modules/
+.DS_Store
+__pycache__/
+# Mixkit 音频不随仓库分发，用 scripts/assets/fetch_audio.sh 下载
+assets/bgm/*.mp3
+assets/sfx/*.mp3
+# 含第三方产品截图的预览图
+examples/grokbot/contact.jpg
+examples/grokbot/cover.png
+examples/grokbot-en/frame-bilingual.jpg

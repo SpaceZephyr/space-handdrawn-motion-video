@@ -1,0 +1,18 @@
+{
+ "W": 1920,
+ "H": 1080,
+ "accent": "#2F6BFF",
+ "voice": {
+  "language": "en",
+  "speaker": "Ryan",
+  "description": "Upbeat product video narrator, confident and friendly, clear American English, energetic pace",
+  "seed": 7,
+  "speed": 1.0,
+  "seeds": {
+   "2": 23
+  }
+ },
+ "bgm": "pick-it-up.mp3",
+ "bgmLufs": -25,
+ "pace": 1.6
+}
