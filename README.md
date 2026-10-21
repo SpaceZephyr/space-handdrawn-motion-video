@@ -1,12 +1,45 @@
 # space-handdrawn-motion-video
 
-白板手绘风格的动效视频 Skill（Claude Code / Agent Skill）。字一个个手写出来，线条像马克笔一笔笔画出来，一支马克笔跟着笔尖走；截图和视频片段用胶带贴在白板上，场与场之间镜头在白板上横移。适合产品介绍、功能讲解、知识科普。
+手绘风格的动效视频 Skill（Claude Code / Agent Skill），十种画风可选：白板、黑板、水彩、蓝图、笔记本、牛皮纸、漫画、软木板、水墨、霓虹。字一个个手写出来，线条像马克笔一笔笔画出来，一支马克笔跟着笔尖走；截图和视频片段用胶带贴在白板上，场与场之间镜头在白板上横移。适合产品介绍、功能讲解、知识科普。
 
 ## 演示
 
 [![演示：代码做视频的 9 种技术（手绘版）](demo/preview.gif)](https://github.com/SpaceZephyr/space-handdrawn-motion-video/releases/download/v0.1.0/demo-codemotion.mp4)
 
 点上面的动图看完整成片（3 分 33 秒，1080p，带配音和配乐）：[demo-codemotion.mp4](https://github.com/SpaceZephyr/space-handdrawn-motion-video/releases/download/v0.1.0/demo-codemotion.mp4)。这条是用本 Skill 把一篇文章做成的讲解视频，稿子和每场画面在 [examples/codemotion](examples/codemotion)。
+
+## 十种风格
+
+配置里改一行 `"theme"`，同一份稿子、同一段配音就换一种画风，场景代码不用动。下面是同一段开场在十种风格下的样子（[examples/styles](examples/styles)），完整对比视频：[demo-styles.mp4](https://github.com/SpaceZephyr/space-handdrawn-motion-video/releases/download/v0.2.0/demo-styles.mp4)。
+
+| 白板 `whiteboard`（默认） | 黑板 `chalkboard` |
+|---|---|
+| ![白板](demo/style-whiteboard.gif) | ![黑板](demo/style-chalkboard.gif) |
+| **水彩 `watercolor`** | **蓝图 `blueprint`** |
+| ![水彩](demo/style-watercolor.gif) | ![蓝图](demo/style-blueprint.gif) |
+| **笔记本 `notebook`** | **牛皮纸蜡笔 `kraft`** |
+| ![笔记本](demo/style-notebook.gif) | ![牛皮纸](demo/style-kraft.gif) |
+| **漫画 `comic`** | **软木板 `cork`** |
+| ![漫画](demo/style-comic.gif) | ![软木板](demo/style-cork.gif) |
+| **水墨 `inkwash`** | **霓虹 `neon`** |
+| ![水墨](demo/style-inkwash.gif) | ![霓虹](demo/style-neon.gif) |
+
+| 风格 | 笔 | 适合 |
+|---|---|---|
+| 白板 | 马克笔 | 产品介绍、功能讲解 |
+| 黑板 | 粉笔 | 讲原理、课程、知识科普 |
+| 水彩 | 水彩笔 | 故事、旅行、品牌片 |
+| 蓝图 | 铅笔 | 架构、流程、技术方案 |
+| 笔记本 | 圆珠笔 | 学习笔记、复盘、教程 |
+| 牛皮纸 | 蜡笔 | 亲子、生活方式、手作 |
+| 漫画 | 马克笔 | 讲故事的产品片 |
+| 软木板 | 马克笔 | 案例拆解、线索梳理 |
+| 水墨 | 毛笔 | 国风、历史、诗词 |
+| 霓虹 | 霓虹笔 | 科技发布、游戏预告 |
+
+### 无限画布
+
+`"transition": "canvas"`：所有白板摆在一张大画布上，换场时镜头平移、缩放过去，像在真白板上拖动；讲到一半能拉远看前面的白板，结尾拉到最远看全景。例子在 [examples/codemotion-canvas](examples/codemotion-canvas)，成片：[demo-canvas.mp4](https://github.com/SpaceZephyr/space-handdrawn-motion-video/releases/download/v0.2.0/demo-canvas.mp4)。
 
 ## 能做什么
 

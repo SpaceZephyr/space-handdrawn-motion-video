@@ -5,14 +5,20 @@
 //   "English line,|second caption chunk."      竖线 | 手动切字幕块（英文必须用，中文可选）
 //   { "say": "English…|…", "sub": "中文…|…" }  双语字幕：sub 的块数和 say 一样，按 say 的时间一块块出
 // 有 beats.json（voice/beats.py 测的配乐节拍）时，每场的结束点往后对齐到下一拍，转场正好卡在拍点上
+// config.transition = "canvas"：无限画布。每场是画布上的一块白板（scenes.mjs 可导出 LAYOUT = [[列, 行], …]，可带小数），
+//   换场时镜头平移 + 缩放过去（离得远会先拉远再推近）；场里 c.look(时间, 目标, 回来的时间) 让镜头临时拉远看别的白板，
+//   目标：白板序号（从 0 起）、序号数组、"all"，或 {x,y,w,h} 画布坐标。scenes.mjs 还可导出 CANVAS(cs, boards) 画在白板之间的东西
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { themeOf, penSvg, FILTERS } from "./themes.mjs";
 
 const P = path.resolve(process.argv[2] || ".");
-const cfg = { W: 1920, H: 1080, accent: "#2456F5", lead: .15, tail: .3, outro: 2, voiceDir: "voice", captions: true, capMain: "sub", pen: true, pace: 1, transition: "pan", beatSync: true, ...(existsSync(`${P}/config.json`) ? JSON.parse(readFileSync(`${P}/config.json`)) : {}) };
-const { SCENES } = await import(pathToFileURL(`${P}/scenes.mjs`));
+const cfg0 = existsSync(`${P}/config.json`) ? JSON.parse(readFileSync(`${P}/config.json`)) : {}, TH = themeOf(cfg0);
+const cfg = { W: 1920, H: 1080, accent: TH.accent, lead: .15, tail: .3, outro: 2, voiceDir: "voice", captions: true, capMain: "sub", pen: true, pace: 1, transition: "pan", beatSync: true, ...(existsSync(`${P}/config.json`) ? JSON.parse(readFileSync(`${P}/config.json`)) : {}) };
+const { SCENES, LAYOUT, CANVAS } = await import(pathToFileURL(`${P}/scenes.mjs`));
+const canvas = cfg.transition === "canvas";
 const raw = JSON.parse(readFileSync(`${P}/lines.json`));
 const shown = s => s.replace(/\{([^|}]*)\|[^}]*\}/g, "$1");
 const chunks = s => s.split(/\|(?![^{]*\})/).map(x => x.trim());
@@ -43,7 +49,7 @@ function charTimes(text, d, key) {
 }
 const trimEnd = s => s.replace(/[，。、；：,.;:]$/, "").trim();
 
-let t = 0; const scenes = [], caps = [], html = [];
+let t = 0; const scenes = [], caps = [], html = [], looks = [], cs = [];
 L.forEach(({ text, say, sub, starts, manual }, i) => {
   const start = t, vs = start + cfg.lead, ve = vs + dur[i];
   const end = i === L.length - 1 ? ve + cfg.tail + cfg.outro : onBeat(ve + cfg.tail);
@@ -52,7 +58,9 @@ L.forEach(({ text, say, sub, starts, manual }, i) => {
     t: x => start + x, start, vs, ve, end, text,
     // c.at("关键词", 偏移秒)：旁白念到这个词的绝对时间（英文旁白就写英文词）
     at(w, off = 0) { const k = text.indexOf(w); if (k < 0) throw new Error(`${id(i)} 稿子里找不到「${w}」`); return vs + ct[k] + off; },
+    look(at, target, until) { looks.push({ i, at, target, until }); },
   };
+  cs.push(c);
   html.push(`<section class="scene" data-start="${start.toFixed(3)}" data-end="${end.toFixed(3)}">${SCENES[i](c)}</section>`);
   if (manual) say.forEach((s, j) => {
     const a = vs + ct[starts[j]], b = j + 1 < say.length ? vs + ct[starts[j + 1]] : ve + .3;
@@ -75,13 +83,47 @@ for (const c of caps) {
 }
 const bi = merged.some(c => c.sub);
 // 马克笔：笔尖在 svg 左下角 (4,146)
-const PEN = `<svg id="pen" viewBox="0 0 150 150"><g transform="translate(4,146) rotate(-48)"><path d="M0 0 L16 -7 L16 7 Z" fill="${cfg.accent}"/><rect x="15" y="-10" width="18" height="20" rx="3" fill="#2b2b30"/><rect x="32" y="-15" width="120" height="30" rx="9" fill="#f4f4f2" stroke="#2b2b30" stroke-width="3"/><rect x="40" y="-15" width="24" height="30" fill="${cfg.accent}"/><rect x="150" y="-13" width="40" height="26" rx="8" fill="${cfg.accent}" stroke="#2b2b30" stroke-width="3"/></g></svg>`;
-const timeline = { duration: +t.toFixed(3), W: cfg.W, H: cfg.H, beat: BEAT && { bpm: BEAT.bpm, offset: BEAT.offset }, scenes };
+const PEN = penSvg(TH.pen, cfg.accent);
+// ---- 无限画布：白板位置 + 镜头路径（van Wijk 平滑缩放，和 d3.interpolateZoom 同一套公式，runtime.js 里有同样的实现）----
+let cam = null, boards = null, worldHtml = "", camMoves = [];
+if (canvas) {
+  const [gx, gy] = cfg.gap || [220, 200], U = cfg.W + gx, V = cfg.H + gy, cols = cfg.cols || 4;
+  boards = L.map((_, i) => { const [c0, r0] = LAYOUT?.[i] ?? [Math.floor(i / cols) % 2 ? cols - 1 - i % cols : i % cols, Math.floor(i / cols)]; return { x: Math.round(c0 * U), y: Math.round(r0 * V), w: cfg.W, h: cfg.H }; });
+  const union = rs => { const x0 = Math.min(...rs.map(r => r.x)), y0 = Math.min(...rs.map(r => r.y)), x1 = Math.max(...rs.map(r => r.x + r.w)), y1 = Math.max(...rs.map(r => r.y + r.h)); return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 }; };
+  const view = tg => {
+    const r = typeof tg === "number" ? boards[tg] : tg === "all" ? union(boards) : Array.isArray(tg) ? union(tg.map(k => boards[k])) : tg;
+    const single = typeof tg === "number", w = Math.max(r.w, r.h * cfg.W / cfg.H) * (single ? 1 : 1.06);
+    return [r.x + r.w / 2, r.y + r.h / 2, w];
+  };
+  const RHO = 1.4, pathLen = ([x0, y0, w0], [x1, y1, w1]) => {
+    const d2 = (x1 - x0) ** 2 + (y1 - y0) ** 2;
+    if (d2 < 1e-6) return Math.abs(Math.log(w1 / w0)) / RHO;
+    const d1 = Math.sqrt(d2), r2 = RHO * RHO, b = (w, s) => (w1 * w1 - w0 * w0 + s * r2 * r2 * d2) / (2 * w * r2 * d1);
+    const r = x => Math.log(Math.sqrt(x * x + 1) - x); return (r(b(w1, -1)) - r(b(w0, 1))) / RHO;
+  };
+  const moveDur = S => Math.min(2.8, Math.max(1.1, .75 + .5 * S));
+  const moves = looks.flatMap(l => [{ a: l.at, to: view(l.target), i: l.i }, ...(l.until != null ? [{ a: l.until, to: view(l.i), i: l.i }] : [])]);
+  scenes.slice(0, -1).forEach((s, i) => moves.push({ a: s.end, to: view(i + 1), i, center: true }));
+  moves.sort((a, b) => a.a - b.a);
+  let cur = view(0), prevB = -1; cam = [];
+  for (const m of moves) {
+    const S = pathLen(cur, m.to), d = moveDur(S); let a = m.center ? m.a - d / 2 : m.a;
+    if (a < prevB - 1e-3) { console.warn(`⚠ 镜头 ${id(m.i)} 在 ${a.toFixed(2)}s 的移动和上一段重叠，顺延到 ${prevB.toFixed(2)}s`); a = prevB; }
+    cam.push({ a: +a.toFixed(3), b: +(a + d).toFixed(3), p0: cur.map(v => +v.toFixed(1)), p1: m.to.map(v => +v.toFixed(1)) });
+    if (m.center) scenes[m.i].still = +(a - .05).toFixed(3);  // 截结尾帧：镜头离开之前
+    else camMoves.push(+(a + d / 2).toFixed(3));
+    cur = m.to; prevB = a + d;
+  }
+  const all = union(boards), M = 6000;
+  worldHtml = `<div id="dots" style="left:${all.x - M}px;top:${all.y - M}px;width:${all.w + 2 * M}px;height:${all.h + 2 * M}px"></div>`;
+  html.forEach((h, i) => { const b = boards[i]; html[i] = h.replace('<section class="scene"', `<section class="scene board" style="left:${b.x}px;top:${b.y}px"`); });
+}
+const timeline = { duration: +t.toFixed(3), W: cfg.W, H: cfg.H, beat: BEAT && { bpm: BEAT.bpm, offset: BEAT.offset }, scenes, ...(canvas ? { camMoves } : {}) };
 writeFileSync(`${P}/timeline.json`, JSON.stringify(timeline, null, 1));
-const bodyCls = [cfg.W > cfg.H ? "land" : "port", cfg.captions ? "" : "nocap", bi ? "bi" : ""].filter(Boolean).join(" ");
-writeFileSync(`${P}/index.html`, `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="engine/style.css"><style>:root{--accent:${cfg.accent};--W:${cfg.W}px;--H:${cfg.H}px}html,body{width:${cfg.W}px;height:${cfg.H}px}${cfg.css || ""}</style></head><body class="${bodyCls}">
-${html.join("\n")}
+const bodyCls = [cfg.W > cfg.H ? "land" : "port", cfg.captions ? "" : "nocap", bi ? "bi" : "", canvas ? "canvas" : "", "th-" + TH.name, TH.dark ? "dark" : ""].filter(Boolean).join(" ");
+writeFileSync(`${P}/index.html`, `<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="engine/style.css"><style>:root{--accent:${cfg.accent};--ink:${TH.ink};--paper:${TH.paper};--soft:${TH.soft || TH.gray};--W:${cfg.W}px;--H:${cfg.H}px}html,body{width:${cfg.W}px;height:${cfg.H}px}${cfg.css || ""}</style></head><body class="${bodyCls}">${FILTERS}
+${canvas ? `<div id="world">${worldHtml}\n${html.join("\n")}\n${CANVAS ? CANVAS(cs, boards) : ""}</div>` : html.join("\n")}
 <div id="capline"></div><div id="cap"></div>${PEN}
-<script>window.PV={W:${cfg.W},H:${cfg.H},pen:${!!cfg.pen},pace:${+cfg.pace || 1},capMain:${JSON.stringify(cfg.capMain)},trans:${JSON.stringify(cfg.transition)}};window.PV_TIMELINE=${JSON.stringify(timeline)};window.PV_CAPS=${JSON.stringify(cfg.captions ? merged : [])};</script>
+<script>window.PV={W:${cfg.W},H:${cfg.H},pen:${!!cfg.pen},pace:${+cfg.pace || 1},capMain:${JSON.stringify(cfg.capMain)},trans:${JSON.stringify(cfg.transition)},cam:${JSON.stringify(cam)},boards:${JSON.stringify(boards)}};window.PV_TIMELINE=${JSON.stringify(timeline)};window.PV_CAPS=${JSON.stringify(cfg.captions ? merged : [])};</script>
 <script src="engine/runtime.js"></script></body></html>`);
-console.log(`总长 ${t.toFixed(1)}s（${Math.floor(t / 60)}分${Math.round(t % 60)}秒），${L.length} 场${silent ? "（无配音，按字数估时）" : ""}${BEAT ? `，转场卡 ${BEAT.bpm} BPM 拍点` : ""}${bi ? "，双语字幕" : ""}`);
+console.log(`总长 ${t.toFixed(1)}s（${Math.floor(t / 60)}分${Math.round(t % 60)}秒），${L.length} 场${silent ? "（无配音，按字数估时）" : ""}${BEAT ? `，转场卡 ${BEAT.bpm} BPM 拍点` : ""}${bi ? "，双语字幕" : ""}${canvas ? `，无限画布 ${cam.length} 段镜头` : ""}`);

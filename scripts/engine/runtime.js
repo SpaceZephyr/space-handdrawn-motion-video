@@ -1,5 +1,6 @@
 // 确定性动画：seek(t) 按 data-at / data-fx / data-kf 算出每个元素在 t 秒的状态，逐帧截图时一帧不差
 // 白板特有：写字和画线时有一支马克笔跟着笔尖走；场与场之间像镜头在白板上横移
+// transition = "canvas"：所有白板摆在一张无限画布上，镜头按 PV.cam 的路径平移缩放（van Wijk 平滑缩放）
 (function () {
   const clamp = v => v < 0 ? 0 : v > 1 ? 1 : v;
   const eo = p => 1 - Math.pow(1 - p, 3);
@@ -7,7 +8,20 @@
   const back = p => { const c = 1.6; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
   const D = { write: 1, draw: 0.9, fade: 0.45, up: 0.55, pop: 0.5, wipe: 0.7, type: 1.2, ripple: 0.6, none: 0, count: 1.2 };
   const PEN_FX = { write: 1, draw: 1 };
-  let els, scenes, caps, capEl, pen, cfg, vids;
+  let els, scenes, caps, capEl, pen, cfg, vids, world, cam;
+  // 两个视野 [中心x, 中心y, 视野宽] 之间的最优缩放路径，和 d3.interpolateZoom 同一套公式
+  function zoomPath([x0, y0, w0], [x1, y1, w1], rho = 1.4) {
+    const dx = x1 - x0, dy = y1 - y0, d2 = dx * dx + dy * dy, r2 = rho * rho;
+    if (d2 < 1e-6) { const S = Math.log(w1 / w0) / rho; return t => [x0 + t * dx, y0 + t * dy, w0 * Math.exp(rho * t * S)]; }
+    const d1 = Math.sqrt(d2), b0 = (w1 * w1 - w0 * w0 + r2 * r2 * d2) / (2 * w0 * r2 * d1), b1 = (w1 * w1 - w0 * w0 - r2 * r2 * d2) / (2 * w1 * r2 * d1);
+    const r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1), S = (r1 - r0) / rho;
+    return t => { const s = t * S, u = w0 / (r2 * d1) * (Math.cosh(r0) * Math.tanh(rho * s + r0) - Math.sinh(r0)); return [x0 + u * dx, y0 + u * dy, w0 * Math.cosh(r0) / Math.cosh(rho * s + r0)]; };
+  }
+  function camAt(t) {
+    let v = cam.length ? cam[0].p0 : [cfg.W / 2, cfg.H / 2, cfg.W];
+    for (const c of cam) { if (t < c.a) break; v = t < c.b ? c.f(eio((t - c.a) / (c.b - c.a))) : c.p1; }
+    return v;
+  }
   function init() {
     cfg = window.PV;
     els = [...document.querySelectorAll(".a")].map(el => {
@@ -25,6 +39,8 @@
     });
     scenes = [...document.querySelectorAll(".scene")].map(el => ({ el, a: +el.dataset.start, b: +el.dataset.end }));
     vids = [...document.querySelectorAll("video.vclip")].map(v => ({ v, at: +v.dataset.at, rate: +v.dataset.rate || 1, from: +v.dataset.from || 0, loop: !!v.dataset.loop, sc: v.closest(".scene") }));
+    world = document.getElementById("world"); cam = (cfg.cam || []).map(c => ({ ...c, f: zoomPath(c.p0, c.p1) }));
+    scenes.forEach((s, i) => s.box = cfg.boards && cfg.boards[i]);
     caps = window.PV_CAPS; capEl = document.getElementById("cap"); pen = document.getElementById("pen");
   }
   function kfAt(kf, t) {
@@ -53,7 +69,13 @@
   window.seek = function (t) {
     if (!els) init();
     const T = cfg.trans === "fade" ? .35 : .55;
-    for (const s of scenes) {
+    let k = 1;
+    if (world) {  // 无限画布：算镜头，只显示视野里的白板
+      const [cx, cy, w] = camAt(t); k = cfg.W / w; const h = w * cfg.H / cfg.W, x0 = cx - w / 2, y0 = cy - h / 2;
+      world.style.transform = `translate(${cfg.W / 2 - cx * k}px,${cfg.H / 2 - cy * k}px) scale(${k})`;
+      for (const s of scenes) { const b = s.box, on = b.x < x0 + w + 40 && b.x + b.w > x0 - 40 && b.y < y0 + h + 40 && b.y + b.h > y0 - 40; s.el.style.display = on ? "block" : "none"; }
+    }
+    else for (const s of scenes) {
       const vin = clamp((t - (s.a - T)) / T), vout = clamp(((s.b + T) - t) / T), v = Math.min(vin, vout);
       s.el.style.display = v <= 0 ? "none" : "block";
       if (cfg.trans === "fade") { s.el.style.opacity = v; s.el.style.transform = `translateY(${(1 - vin) * 24 - (1 - vout) * 24}px)`; }
@@ -98,7 +120,7 @@
     }
     // 马克笔：正在写/画的那一笔；刚写完的停 0.3 秒再淡出
     const cur = active || recent, pt = cfg.pen && cur ? tip(cur.o, cur.p) : null;
-    if (pt) { pen.style.display = "block"; pen.style.opacity = active ? 1 : clamp(cur.fade); pen.style.transform = `translate(${pt[0] - 4}px,${pt[1] - 146}px)`; }
+    if (pt) { pen.style.display = "block"; pen.style.opacity = active ? 1 : clamp(cur.fade); pen.style.transform = `translate(${pt[0] - 4 * k}px,${pt[1] - 146 * k}px) scale(${k})`; }
     else pen.style.display = "none";
     // 视频片段：按 t 拨到对应的那一帧；返回 Promise，逐帧渲染时等所有片段 seek 完再截图
     const wait = [];

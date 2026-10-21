@@ -2,10 +2,12 @@
 // 坐标都是整张画布的像素坐标（横版 1920×1080，竖版 1080×1440 等，看 config.json 的 W/H）
 import rough from "roughjs/bundled/rough.esm.js";
 import { readFileSync } from "node:fs";
+import { themeOf } from "./themes.mjs";
 
 export const CFG = (() => { try { return JSON.parse(readFileSync(new URL("../config.json", import.meta.url))); } catch { return {}; } })();
 export const W = CFG.W || 1920, H = CFG.H || 1080, LAND = W > H;
-export const INK = "#1f1f22", ACC = CFG.accent || "#2456F5", GRAY = "#8d8d94";
+export const THEME = themeOf(CFG);  // config.theme：whiteboard | chalkboard | watercolor | blueprint | notebook | kraft | comic | cork | inkwash | neon
+export const INK = THEME.ink, ACC = CFG.accent || THEME.accent, GRAY = THEME.gray, PAPER = THEME.paper;
 export const BLUE = ACC; // 兼容旧写法
 const gen = rough.generator();
 let seed = 7;
@@ -23,16 +25,16 @@ export function A({ at = 0, fx = "up", d, out, kf, cls = "", pen } = {}) {
 
 // 马克笔质感：线条加粗、圆头，roughness/bowing 比默认更抖
 const paths = (dr, color, w) => gen.toPaths(dr).map(p =>
-  `<path pathLength="1" d="${p.d}" stroke="${p.stroke === "none" ? "none" : color}" stroke-width="${w > 0 && w < 12 ? w * 1.45 : w}" stroke-linecap="round" stroke-linejoin="round" fill="${p.fill && p.fill !== "none" ? p.fill : "none"}" ${p.fill && p.fill !== "none" ? 'class="fillp"' : ""}/>`).join("");
-const o = (x = {}) => { const r = { roughness: 1.3, bowing: 1.2, seed: seed++, strokeWidth: 3, ...x }; r.roughness *= 1.35; r.bowing *= 1.4; return r; };
+  `<path pathLength="1" d="${p.d}" stroke="${p.stroke === "none" ? "none" : color}" stroke-width="${(w > 0 && w < 12 ? w * 1.45 : w) * THEME.sw}" stroke-linecap="round" stroke-linejoin="round" fill="${p.fill && p.fill !== "none" ? p.fill : "none"}" ${p.fill && p.fill !== "none" ? 'class="fillp"' : ""}/>`).join("");
+const o = (x = {}) => { const r = { roughness: 1.3, bowing: 1.2, seed: seed++, strokeWidth: 3, ...x }; r.roughness *= 1.35 * THEME.rough; r.bowing *= 1.4 * THEME.rough; return r; };
 
 // 线稿形状：返回 path 串，拼好后用 sk() 包成一层
 export const R = {
-  rect: (x, y, w, h, opt = {}) => paths(gen.rectangle(x, y, w, h, o(opt)), opt.color || INK, opt.w || 3),
+  rect: (x, y, w, h, opt = {}) => paths(gen.rectangle(x, y, w, h, o(opt)), opt.color || INK, opt.w || 3) + tint(x + w / 2, y + h / 2, w, h, opt),
   fillRect: (x, y, w, h, color = ACC, opt = {}) => paths(gen.rectangle(x, y, w, h, o({ fill: color, fillStyle: "solid", stroke: "none", ...opt })), color, 0),
   // 斜线涂满（手绘的「涂色」），color 默认强调色
   hatch: (x, y, w, h, color = ACC, opt = {}) => paths(gen.rectangle(x, y, w, h, o({ fill: color, fillStyle: "hachure", hachureGap: opt.gap || 14, fillWeight: opt.fw || 3, stroke: "none", ...opt })), color, opt.fw || 3),
-  ell: (cx, cy, w, h, opt = {}) => paths(gen.ellipse(cx, cy, w, h, o({ roughness: 1.6, ...opt })), opt.color || INK, opt.w || 3),
+  ell: (cx, cy, w, h, opt = {}) => paths(gen.ellipse(cx, cy, w, h, o({ roughness: 1.6, ...opt })), opt.color || INK, opt.w || 3) + tint(cx, cy, w, h, opt),
   fillEll: (cx, cy, w, h, color = ACC) => paths(gen.ellipse(cx, cy, w, h, o({ fill: color, fillStyle: "solid", stroke: "none" })), color, 0),
   line: (x1, y1, x2, y2, opt = {}) => paths(gen.line(x1, y1, x2, y2, o(opt)), opt.color || INK, opt.w || 3),
   curve: (pts, opt = {}) => paths(gen.curve(pts, o({ roughness: 0.9, ...opt })), opt.color || INK, opt.w || 3),
@@ -54,9 +56,24 @@ export const R = {
   under: (x1, y, x2, opt = {}) => paths(gen.line(x1, y, x2, y + 2, o({ roughness: 1, ...opt })), opt.color || ACC, opt.w || 4) + paths(gen.line(x1 + 8, y + 9, x2 - 6, y + 7, o({ roughness: 1, ...opt })), opt.color || ACC, (opt.w || 4) * .8),
   boxAround: (x, y, w, h, opt = {}) => paths(gen.rectangle(x, y, w, h, o({ roughness: 1.8, ...opt })), opt.color || ACC, opt.w || 3.5) + paths(gen.rectangle(x - 4, y + 3, w + 6, h - 4, o({ roughness: 2, ...opt })), opt.color || ACC, (opt.w || 3.5) * .7),
   circle: (cx, cy, w, h, opt = {}) => paths(gen.ellipse(cx, cy, w, h, o({ roughness: 1.4, ...opt })), opt.color || ACC, opt.w || 4) + paths(gen.ellipse(cx + 4, cy - 3, w * 1.04, h * .96, o({ roughness: 1.8, ...opt })), opt.color || ACC, (opt.w || 4) * .7),
+  // 水彩色块：一个边缘坑坑洼洼的形状叠 layers 层，每层透明度很低，中间深边缘浅（fx:"draw" 时一层层晕上去）
+  wash: (cx, cy, w, h, color = ACC, { layers = 7, op = .17, seed: sd = seed++ } = {}) => {
+    let st = sd * 9301 + 49297; const rnd = () => (st = (st * 9301 + 49297) % 233280) / 233280;
+    const base = Array.from({ length: 10 }, (_, i) => { const a = i / 10 * Math.PI * 2; return [Math.cos(a) * w / 2, Math.sin(a) * h / 2]; });
+    const deform = (pts, k, amt) => k ? deform(pts.flatMap((p, i) => { const q = pts[(i + 1) % pts.length], m = [(p[0] + q[0]) / 2, (p[1] + q[1]) / 2], d = Math.hypot(q[0] - p[0], q[1] - p[1]) * amt; return [p, [m[0] + (rnd() - .5) * d, m[1] + (rnd() - .5) * d]]; }), k - 1, amt * .8) : pts;
+    const core = deform(base, 2, .5);
+    return Array.from({ length: layers }, () => { const pts = deform(core, 2, .45); return `<path class="fillp" d="M${pts.map(([x, y]) => `${(cx + x).toFixed(1)} ${(cy + y).toFixed(1)}`).join("L")}Z" fill="${color}" fill-opacity="${op}" stroke="none"/>`; }).join("");
+  },
   // 速度线 / 强调线：在 (cx,cy) 周围放射几笔
   burst: (cx, cy, r = 70, n = 6, opt = {}) => Array.from({ length: n }, (_, i) => { const a = -Math.PI / 2 + (i - (n - 1) / 2) * .45; return paths(gen.line(cx + r * Math.cos(a), cy + r * Math.sin(a), cx + (r + 34) * Math.cos(a), cy + (r + 34) * Math.sin(a), o({ roughness: .7, ...opt })), opt.color || ACC, opt.w || 4); }).join(""),
 };
+// 水彩/水墨风格：框和圈画完后自动晕一层淡彩（颜色轮换），opt.wash: false 关掉，opt.wash: "#色值" 指定颜色
+// 有 tint 的风格（水彩、水墨）才晕：颜色在 THEME.tint 里轮换
+let pal = 0;
+function tint(cx, cy, w, h, opt) {
+  if (!THEME.tint || opt.wash === false || w < 24 || h < 24) return "";
+  return R.wash(cx + 4, cy + 5, w * 1.04, h * 1.08, typeof opt.wash === "string" ? opt.wash : THEME.tint[pal++ % THEME.tint.length], { layers: 6, op: THEME.tintOp || .075 });
+}
 function hexA(hex, a) { const n = parseInt(hex.slice(1), 16); return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`; }
 
 // 线稿图标（以 cx,cy 为中心，约 s 大小）
@@ -102,14 +119,14 @@ export const head = (c, kicker, title, { n, at = c.t(.05) } = {}) =>
 // ---- 贴在白板上的素材 ----
 export const tape = (x, y, r = -8, w = 110) => `<div style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:32px;background:rgba(236,226,196,.85);transform:rotate(${r}deg);box-shadow:0 1px 2px rgba(0,0,0,.08);z-index:3"></div>`;
 // 截图：手绘细边框 + 两条胶带。fit=cover 时按 pos 裁
-export const pin = (src, w, h, { fit = "cover", pos = "top", tapes = true, bg = "#fff" } = {}) =>
+export const pin = (src, w, h, { fit = "cover", pos = "top", tapes = true, bg = "var(--card)" } = {}) =>
   `<div style="position:relative;width:${w}px;${h ? `height:${h}px;` : ""}"><div class="shot" style="width:100%;${h ? "height:100%;" : ""}background:${bg}"><img src="${src}" style="width:100%;${h ? `height:100%;object-fit:${fit};object-position:${pos};` : ""}display:block"></div>${tapes ? tape(-30, -12, -24, 100) + tape(w - 70, -10, 18, 100) : ""}</div>`;
 // 视频片段：贴在白板上的一段视频，at 秒开始播（rate 倍速，from 从片段第几秒起），播完停在最后一帧；loop 循环
 // 片段先用 scripts/assets/clip.sh 裁好、转成全关键帧 mp4，逐帧渲染时才能精确拨到每一帧
 export const clip = (src, w, h, { at = 0, rate = 1, from = 0, loop = false, fit = "cover", pos = "center", tapes = true, bg = "#111", label } = {}) =>
   `<div style="position:relative;width:${w}px;height:${h}px"><div class="shot" style="width:100%;height:100%;background:${bg}"><video class="vclip" src="${src}" muted playsinline preload="auto" data-at="${(+at).toFixed(3)}" data-rate="${rate}" data-from="${from}"${loop ? ' data-loop="1"' : ""} style="width:100%;height:100%;object-fit:${fit};object-position:${pos};display:block"></video></div>${tapes ? tape(-30, -12, -24, 100) + tape(w - 70, -10, 18, 100) : ""}${label ? `<div class="clip-src">${label}</div>` : ""}</div>`;
 // 截图局部放大：从 src 里取 [x0,y0,x1,y1]（0–1 比例）这块，画在 w×h 的圆框里（像放大镜）
-export const lens = (src, [x0, y0, x1, y1], d) => { const sw = d / (x1 - x0), sh = d / (y1 - y0); return `<div style="width:${d}px;height:${d}px;border-radius:50%;overflow:hidden;border:4px solid ${INK};background:#fff;position:relative"><img src="${src}" style="position:absolute;width:${sw}px;height:${sh}px;left:${-x0 * sw}px;top:${-y0 * sh}px;max-width:none"></div>`; };
+export const lens = (src, [x0, y0, x1, y1], d) => { const sw = d / (x1 - x0), sh = d / (y1 - y0); return `<div style="width:${d}px;height:${d}px;border-radius:50%;overflow:hidden;border:4px solid ${INK};background:var(--card);position:relative"><img src="${src}" style="position:absolute;width:${sw}px;height:${sh}px;left:${-x0 * sw}px;top:${-y0 * sh}px;max-width:none"></div>`; };
 // logo 原件（透明底 PNG/SVG），ink=true 时压成墨色单色，和手绘线条统一
 export const logo = (src, h, { ink = false } = {}) => `<img src="${src}" style="height:${h}px;display:block;${ink ? "filter:brightness(0) saturate(100%);opacity:.92;" : ""}">`;
 // 便利贴

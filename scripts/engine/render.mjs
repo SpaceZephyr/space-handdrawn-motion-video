@@ -1,6 +1,6 @@
 // 逐帧渲染：seek(t) → 截图 → ffmpeg。
 // 用法：node engine/render.mjs [项目目录] [--fps 30] [--stills ends|mid|1.5,8,20]
-//   --stills ends = 每场结尾前 0.3s 一张；mid = 每场 35%/70% 各一张；输出 stills/ + contact.jpg 拼图
+//   --stills ends = 每场结尾前 0.3s 一张（无限画布：镜头离开前）；mid = 每场 35%/70% 各一张；输出 stills/ + contact.jpg 拼图
 import puppeteer from "puppeteer-core";
 import { spawn, execFileSync } from "node:child_process";
 import { mkdirSync, rmSync, readdirSync, writeFileSync } from "node:fs";
@@ -28,7 +28,7 @@ for (const it of EV.items) { const k = it.s; if (k >= 0 && it.at + it.d > EV.sce
 const stills = opt("stills");
 if (stills) {
   const dir = P + "/stills"; rmSync(dir, { recursive: true, force: true }); mkdirSync(dir);
-  const list = stills === "ends" ? tl.scenes.map(s => s.end - .3) : stills === "mid" ? tl.scenes.flatMap(s => [s.start + s.dur * .35, s.start + s.dur * .7]) : stills.split(",").map(Number);
+  const list = stills === "ends" ? tl.scenes.map(s => s.still ?? s.end - .3) : stills === "mid" ? tl.scenes.flatMap(s => [s.start + s.dur * .35, s.start + s.dur * .7]) : stills.split(",").map(Number);
   for (const [k, s] of list.entries()) { await page.evaluate(t => window.seek(t), s); await page.screenshot({ path: `${dir}/s${String(k + 1).padStart(3, "0")}.jpg`, type: "jpeg", quality: 85 }); }
   await browser.close();
   const n = readdirSync(dir).length, cols = Math.min(6, n), rows = Math.ceil(n / cols);

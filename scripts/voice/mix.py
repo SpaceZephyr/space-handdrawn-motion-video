@@ -37,6 +37,7 @@ if has_sfx:
     wh = dec(f"{ASSET}/sfx/whoosh.mp3"); env = np.convolve(np.abs(wh), np.ones(2400) / 2400, "same"); wpk = int(np.argmax(env)) / SR
     pop = dec(f"{ASSET}/sfx/pop.mp3"); mk = dec(f"{ASSET}/sfx/marker.mp3")
     for s in ev["scenes"][:-1]: put(wh, s["b"] - wpk, G["whoosh"])
+    for m in tl.get("camMoves", []): put(wh, m - wpk, G["whoosh"] * .8)  # 无限画布：场内的拉远、飞去别的白板
     for it in ev["items"]:
         if it["fx"] == "pop": put(pop, it["at"], G["pop"])
         elif it["d"] >= .25:  # 马克笔：循环到笔画时长，尾部 80ms 淡出

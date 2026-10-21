@@ -1,0 +1,17 @@
+{
+ "W": 1920,
+ "H": 1080,
+ "accent": "#3346D3",
+ "voice": {
+  "speed": 1.2
+ },
+ "bgm": "pick-it-up.mp3",
+ "bgmLufs": -27,
+ "pace": 1.2,
+ "transition": "canvas",
+ "gap": [
+  240,
+  220
+ ],
+ "outro": 3.6
+}
