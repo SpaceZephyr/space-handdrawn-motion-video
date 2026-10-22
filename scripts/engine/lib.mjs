@@ -132,6 +132,34 @@ export const logo = (src, h, { ink = false } = {}) => `<img src="${src}" style="
 // 便利贴
 export const note = (x, y, w, text, a, { r = -3, color = "#FFF3A8", size = 32 } = {}) => `<div ${a} style="position:absolute;left:${x}px;top:${y}px;width:${w}px;"><div class="note" style="position:relative;background:${color};transform:rotate(${r}deg);font-size:${size}px">${text}</div></div>`;
 
+// ---- 剪贴画：真实照片、界面、视频剪下来贴在白板上（产品片默认用这一套，手绘只做标注）----
+const SH = "0 12px 28px rgba(60,40,20,.2),0 2px 5px rgba(60,40,20,.14)";
+const tp = (x, y, r, w = 120) => `<i class="tape-x" style="position:absolute;left:${x}px;top:${y}px;width:${w}px;height:34px;background:rgba(238,226,190,.82);transform:rotate(${r}deg);box-shadow:0 1px 2px rgba(0,0,0,.08);z-index:3"></i>`;
+const tapesOf = (kind, w) => kind === "corners" ? tp(-34, -6, -38) + tp(w - 86, -6, 38) : kind === "top" ? tp(w / 2 - 60, -18, -3) : kind === "side" ? tp(-40, 30, -70, 100) : "";
+const media = (src, w, h, v, st = "") => /\.(mp4|webm|mov)$/i.test(src)
+  ? `<video class="vclip" src="${src}" muted playsinline preload="auto" data-at="${(+(v.at || 0)).toFixed(3)}" data-rate="${v.rate || 1}" data-from="${v.from || 0}"${v.loop ? ' data-loop="1"' : ""} style="width:${w}px;${h ? `height:${h}px;object-fit:cover;` : ""}display:block;${st}"></video>`
+  : `<img src="${src}" style="width:${w}px;${h ? `height:${h}px;object-fit:cover;object-position:${v.pos || "center"};` : ""}display:block;${st}">`;
+// 剪下来的一块：白边 + 投影 + 胶带 + 轻微旋转。src 可以是图片，也可以是 mp4（视频剪贴，at/rate/from/loop 同 clip）
+// tapes: "corners" 两角斜贴 | "top" 顶上一条 | "side" 左边一条 | false
+export const cut = (src, w, { r = 0, h, pad = 12, tapes = "corners", radius = 6, pos, at, rate, from, loop } = {}) =>
+  `<div style="position:relative;transform:rotate(${r}deg);width:${w + pad * 2}px"><div style="background:#fff;padding:${pad}px;border-radius:${radius}px;box-shadow:${SH}">${media(src, w, h, { pos, at, rate, from, loop }, `border-radius:${Math.max(0, radius - 3)}px`)}</div>${tapesOf(tapes, w + pad * 2)}</div>`;
+// 拍立得：人像、场景、实物照片。底部留白写一行手写说明
+export const photo = (src, w, { r = 0, h = w, caption = "", size = 30, tapes = "top", pos } = {}) =>
+  `<div style="position:relative;transform:rotate(${r}deg);width:${w + 28}px"><div style="background:#fff;padding:14px 14px ${caption ? 64 : 40}px;box-shadow:${SH}">${media(src, w, h, { pos })}${caption ? `<div class="hand" style="position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:${size}px;color:#2a2a2e">${caption}</div>` : ""}</div>${tapesOf(tapes, w + 28)}</div>`;
+// 贴纸：透明底的抠图（手机、实物、人物、logo），一圈白边 + 投影，像剪下来的贴纸
+export const sticker = (src, w, { r = 0, edge = 6, tapes = false } = {}) =>
+  `<div style="position:relative;transform:rotate(${r}deg);width:${w}px"><img src="${src}" style="width:${w}px;display:block;filter:${[[edge, 0], [-edge, 0], [0, edge], [0, -edge]].map(([x, y]) => `drop-shadow(${x}px ${y}px 0 #fff)`).join(" ")} drop-shadow(0 14px 22px rgba(60,40,20,.28))">${tapesOf(tapes, w)}</div>`;
+// 抠了底色的横幅（通知、按钮、消息气泡的原图）放在白色圆角卡上
+export const banner = (src, w, { r = 0, radius = 30, tapes = "top" } = {}) =>
+  `<div style="position:relative;transform:rotate(${r}deg)"><div style="background:#fff;border-radius:${radius}px;padding:10px 16px;box-shadow:${SH}"><img src="${src}" style="width:${w}px;display:block"></div>${tapesOf(tapes, w + 32)}</div>`;
+// iOS 样式的系统通知（真实 App 图标 + 系统字体），没有官方截图时代替手绘的消息框
+export const notif = (icon, app, title, text, { w = 640, r = 0, time = "now", dark = false } = {}) =>
+  `<div style="position:relative;transform:rotate(${r}deg);width:${w}px;background:${dark ? "rgba(40,40,44,.96)" : "rgba(255,255,255,.97)"};border-radius:28px;padding:20px 24px;display:flex;gap:18px;align-items:center;box-shadow:${SH};font-family:-apple-system,'SF Pro Text','PingFang SC','Helvetica Neue',sans-serif;color:${dark ? "#f5f5f7" : "#1d1d1f"}">
+  <img src="${icon}" style="width:72px;height:72px;border-radius:16px;flex:none">
+  <div style="flex:1;min-width:0;line-height:1.3"><div style="display:flex;justify-content:space-between;font-size:26px"><b>${app}</b><span style="color:#8e8e93;font-size:22px">${time}</span></div><div style="font-size:25px;font-weight:600">${title}</div><div style="font-size:25px;color:${dark ? "#c7c7cc" : "#3a3a3c"};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${text}</div></div></div>`;
+// 真实 App 图标（圆角 + 投影）
+export const app = (src, s, { r = 0 } = {}) => `<img src="${src}" style="width:${s}px;height:${s}px;border-radius:${s * .22}px;display:block;transform:rotate(${r}deg);box-shadow:0 8px 18px rgba(60,40,20,.22)">`;
+
 // ---- 手绘外壳的真实界面 ----
 export const phone = (inner, st = "") => `<div class="phone" style="${st}"><div class="ph-sb"><span>9:41</span><i></i></div><div class="ph-in">${inner}</div></div>`;
 export const browser = (url, inner, st = "") => `<div class="win" style="${st}"><div class="win-bar"><i></i><i></i><i></i><div class="win-url">${url}</div></div><div class="win-in">${inner}</div></div>`;

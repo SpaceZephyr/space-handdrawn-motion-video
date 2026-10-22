@@ -17,3 +17,11 @@
 | 英文产品名被念成别的（Grok Bot → Ruck Buck） | 英文 TTS 对生造词也不稳 | align.py 报出来后出 3–4 个种子候选，识别对的那个记进 `voice.seeds` |
 | 双语字幕对不上 | say 和 sub 的竖线块数不一样 | build.mjs 会直接报错，补齐块数；一块一屏，英文 ≤ 8 个词 |
 | 转场不在拍点上 | 没跑 beats.py，或换了配乐没重测 | 换曲后重跑 `beats.py` 再 build；`"beatSync": false` 关掉 |
+| 手绘的手机、通知、消息框看着简陋，像草图 | 产品界面用线框画出来缺质感 | 一律换成真实界面剪贴：`cut()` `banner()` `sticker()`，没有官方图时用 `notif()` + 真实 App 图标 |
+| 剪下来的界面字糊 | 从 X 的 720p 视频里截 | 同一条发布视频多半在 YouTube 有 4K，`yt-dlp -F` 挑最高格式，`cutout.sh` 按秒取原尺寸帧再裁 |
+| yt-dlp 报 YouTube「page needs to be reloaded」 | yt-dlp 太旧 | `brew upgrade yt-dlp` |
+| 抠完底色，界面里的浅色也被抠空了 | colorkey 相似度太大 | 从 `0.06:0.04` 起调；只抠纯色背景，界面本身的白卡放进 `banner()`/`cut()` 的白底里 |
+| 水彩/水墨里手绘的眼睛、圆被晕成随机颜色 | 框和圈会自动晕淡彩 | `R.ell(..., { wash: false })` |
+| echo 出来第一个字乱码 | `$OUT：` 全角冒号被当成变量名 | 写成 `${OUT}：` |
+| 弹出动作差一点不在拍上 | 按关键词算的时间不在拍点 | `c.beat(时间)` 吸到最近拍点（窗口 0.35 秒，第三个参数 2 只吸每两拍） |
+

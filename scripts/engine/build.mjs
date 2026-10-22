@@ -59,6 +59,8 @@ L.forEach(({ text, say, sub, starts, manual }, i) => {
     // c.at("关键词", 偏移秒)：旁白念到这个词的绝对时间（英文旁白就写英文词）
     at(w, off = 0) { const k = text.indexOf(w); if (k < 0) throw new Error(`${id(i)} 稿子里找不到「${w}」`); return vs + ct[k] + off; },
     look(at, target, until) { looks.push({ i, at, target, until }); },
+    // c.beat(时间, 窗口)：把动作吸到最近的配乐拍点上（离拍点超过窗口就不动），c.beat(时间, 窗口, 2) 只吸到每两拍
+    beat(x, w = .35, every = 1) { if (!BEAT) return x; const p = 60 / BEAT.bpm * every, b = BEAT.offset + Math.round((x - BEAT.offset) / p) * p; return Math.abs(b - x) <= w ? b : x; },
   };
   cs.push(c);
   html.push(`<section class="scene" data-start="${start.toFixed(3)}" data-end="${end.toFixed(3)}">${SCENES[i](c)}</section>`);

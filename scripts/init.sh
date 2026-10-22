@@ -11,12 +11,12 @@ ln -sfn "$S/node_modules" "$P/node_modules"
 [ -f "$P/cover/cover.mjs" ] || cp "$S/cover/cover.template.mjs" "$P/cover/cover.mjs"
 [ -f "$P/config.json" ] || cat > "$P/config.json" <<EOT
 { $WH, "accent": "#2456F5",
-  "voice": { "speaker": "Serena", "description": "产品介绍视频的旁白，亲切自然，吐字清楚，语速适中", "seed": 7, "speed": 1.0 } }
+  "voice": { "language": "en", "speaker": "Ryan", "description": "Upbeat product launch narrator, warm and clear, natural pace", "seed": 7, "speed": 1.0 } }
 EOT
 [ -f "$P/lines.json" ] || echo '[]' > "$P/lines.json"
 [ -f "$P/scenes.mjs" ] || cat > "$P/scenes.mjs" <<'EOT'
-// 每一句旁白对应一场画面。写法见 references/scene-patterns.md，完整例子见 examples/grokbot/scenes.mjs
-import { A, R, ICON, W, H, ACC, INK, sk, hand, write, box, head, pin, lens, logo, note, tape, phone, browser, cursor, tap } from "./engine/lib.mjs";
+// 每一句旁白对应一场画面。写法见 references/scene-patterns.md，剪贴画例子见 examples/duet/scenes.mjs
+import { A, R, ICON, W, H, ACC, INK, GRAY, sk, hand, write, box, head, pin, clip, lens, logo, note, tape, cursor, tap, cut, photo, sticker, banner, notif, app } from "./engine/lib.mjs";
 export const SCENES = [];
 EOT
 echo "项目已建好：${P}（${F}）"

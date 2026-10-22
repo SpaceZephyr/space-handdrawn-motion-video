@@ -48,7 +48,7 @@
 | 字 | 手写字体「小赖」，标题和标注一个字一个字写出来 |
 | 线 | rough.js 生成的抖动线稿，加粗圆头，按顺序一笔笔画出 |
 | 笔 | 写字、画线时马克笔跟着笔尖走，笔速可调（`pace`） |
-| 素材 | 截图 `pin()`、视频片段 `clip()`、局部放大 `lens()`、便利贴、手绘外壳的手机和浏览器 |
+| 素材 | 剪贴画：真实界面、照片、视频剪下来带白边胶带贴上去（`cut()` `photo()` `sticker()` `banner()` `notif()` `app()`）；截图 `pin()`、视频片段 `clip()`、局部放大 `lens()`、便利贴 |
 | 声音 | 本地 TTS 配音（中文或英文），Whisper 逐字对时，画面按旁白关键词出现；配乐卡拍点，转场 whoosh、弹出 pop、写字的马克笔声 |
 | 字幕 | 中文、英文，或中英双语 |
 | 比例 | 16:9、3:4、9:16、1:1 |
@@ -78,6 +78,7 @@ bash scripts/assets/fetch_audio.sh     # 下载配乐和音效（Mixkit）
 
 例子：
 - [examples/codemotion](examples/codemotion)：讲解类，文章 → 3 分半视频，每种工具配演示动图和案例片段
+- [examples/duet](examples/duet)：剪贴画宣传片，界面、手机、人像全部从官方 4K 发布视频剪下来贴上，英文旁白 + 双语字幕 + 卡拍
 - [examples/grokbot](examples/grokbot)：产品介绍，中文旁白，84 秒
 - [examples/grokbot-en](examples/grokbot-en)：同一个产品，英文旁白 + 中英双语字幕 + 动感卡点
 

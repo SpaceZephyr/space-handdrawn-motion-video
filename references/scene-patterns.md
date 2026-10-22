@@ -67,7 +67,43 @@ A() 自带 class 属性，元素上不要再写 `class=`，用 `cls`。
 - `note(x, y, 宽, 文字, A, { r, color, size })`：便利贴
 - `tape(x, y, 角度, 宽)`：单独一条胶带
 
-**手绘外壳的界面**：`phone(内部HTML, 样式)`、`browser(网址, 内部HTML, 样式)`，以及 class：`.card` `.chip`（`.on` 填强调色）`.btn`（`.acc`）`.bubble`（`.me` 是自己发的）`.note`。`cursor(A)` 光标配 kf 移动，`tap(x, y, at)` 点击波纹。
+**手绘外壳的界面**（只在讲纯概念、没有真实界面时用；产品界面用上面的剪贴画组件）：`phone(内部HTML, 样式)`、`browser(网址, 内部HTML, 样式)`，以及 class：`.card` `.chip`（`.on` 填强调色）`.btn`（`.acc`）`.bubble`（`.me` 是自己发的）`.note`。`cursor(A)` 光标配 kf 移动，`tap(x, y, at)` 点击波纹。
+
+## 剪贴画（产品片默认）
+
+完整例子 `examples/duet/scenes.mjs`。场景顶部常用简写：
+
+```js
+import { A, R, ICON, ACC, INK, GRAY, sk, write, note, cursor, tap, cut, photo, sticker, banner, notif, app } from "./engine/lib.mjs";
+const ON = (x, y, inner, at, fx = "pop", st = "") => `<div ${A({ at, fx, pen: false })} style="position:absolute;left:${x}px;top:${y}px;${st}">${inner}</div>`;
+const B = (c, x, w) => c.beat(x, w);          // 吸到拍点
+const U = f => `assets/ui/${f}.png`;
+```
+
+```js
+c => T(110, 80, "Ask once.", c.t(.1), 72) +
+  ON(110, 230, cut(U("chat-ask"), 620, { r: -2.5 }), B(c, c.at("Ask for") - .1)) +           // 真实聊天记录，左歪
+  ["shopify", "salesforce", "gmail"].map((a, i) =>
+    ON(840 + i * 105, 300 + (i % 2) * 40, app(U("app-" + a), 92), B(c, c.at(["point of sale", "online store", "CRM"][i])))).join("") +
+  S(R.arrow([[860, 520], [1000, 600], [1130, 560]], { w: 5 }), c.at("pulls") - .1, .4) +     // 手绘箭头串起来
+  ON(1170, 420, cut(U("dashboard"), 640, { r: 2 }), B(c, c.at("CRM and payroll") + .2)) +   // 真实看板，右歪
+  S(R.circle(1340, 560, 300, 90), c.at("revenue"), .5)                                       // 圈出要讲的数字
+```
+
+| 场景 | 剪贴怎么排 |
+|---|---|
+| 痛点：消息太多 | 4–6 条 `notif()`（真实 App 图标）错落叠着，交替歪 ±3°，跟着旁白一条条弹，右边手写一句问句 |
+| 产品登场 | logo/App 图标 `app()` 居中，名字手写，定位句写出来，圈住关键词 |
+| 一个功能 | 左边 `banner()` 或 `cut()` 一块界面，右边 `sticker()` 一台真手机或一段 `cut(mp4)` 演示；念到哪行就圈哪行 |
+| 前后对比 | 左边一张旧做法的截图打叉，右边新界面；中间手绘箭头 |
+| 数字 | 手写大数字 + 圈，旁边贴出这个数字的原始界面（截图里也圈上） |
+| 人在用 | 3–4 张 `photo()` 拍立得一排，歪斜交替，底部手写名字，卡拍依次弹出 |
+| 集成/生态 | 官方连接器墙 `cut()`，或一排 `app()` 图标，箭头汇到产品 |
+| 「点一下就行」 | 大块界面 `cut()` 居中，`cursor()` 用 kf 移到按钮，`tap()` 波纹 + 圈 |
+| 结果 | 结果通知 `banner()` 横贴，两边 `R.burst` 强调线，下划线 |
+| 怎么用上 | 产品页首图 `cut()` + 手写档位 `chip` + 便利贴写网址 |
+
+坐标经验（16:9）：一场 1 大（600–900 宽）+ 1 中（400–600）+ 若干小（图标 90–170）；大块离画面边缘 ≥ 100px，胶带会超出边框 20px 左右，别贴到标题上；手写批注放在剪贴旁边的空白里，不要压在图上（圈和箭头可以）。
 
 ## 产品介绍的场景写法（`examples/grokbot/scenes.mjs`）
 
@@ -93,7 +129,8 @@ A() 自带 class 属性，元素上不要再写 `class=`，用 `cls`。
 - `--stills mid` 或 `--stills 5.2,9,40` 看中间：马克笔在不在笔尖；同一时刻有没有空场超过 2 秒。
 - 重叠：手写字一个中文约等于字号宽，英文约 0.55 倍；手写字别压在截图和字幕上。
 - 截图里要讲的那块够不够大：1920 宽的画面里截图文字小于 14px 就看不清，裁出局部再贴。
-- 一场只有一种强调色；不出现 emoji；界面都是真实截图，不画产品里没有的功能。
+- 一场只有一种强调色；不出现 emoji；界面都是真实素材剪贴，不画产品里没有的功能。
+- 剪贴够不够：每场至少一块真实素材；全片只有手绘的场不超过两场；手机、通知、人物没有用手绘代替。
 
 ## 无限画布（`"transition": "canvas"`）
 

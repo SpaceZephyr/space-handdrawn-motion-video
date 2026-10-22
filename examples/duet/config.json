@@ -1,0 +1,21 @@
+{
+ "W": 1920,
+ "H": 1080,
+ "theme": "watercolor",
+ "accent": "#D97757",
+ "voice": {
+  "language": "en",
+  "speaker": "Ryan",
+  "description": "Upbeat product launch narrator, warm and confident, clear American English, lively pace",
+  "seed": 7,
+  "speed": 1.0
+ },
+ "bgm": "cupcakes.mp3",
+ "bgmLufs": -20,
+ "pace": 1.3,
+ "sfx": {
+  "whoosh": 0.85,
+  "pop": 0.8,
+  "marker": 0.35
+ }
+}

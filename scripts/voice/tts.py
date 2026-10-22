@@ -10,7 +10,7 @@ from text import reading
 P = Path(sys.argv[1]).resolve(); args = sys.argv[2:]
 kv = dict(a.split("=", 1) for a in args if "=" in a); POST_ONLY = "post" in args
 cfg = json.loads((P / "config.json").read_text()) if (P / "config.json").exists() else {}
-V = {"speaker": "Serena", "description": "产品介绍视频的旁白，亲切自然，吐字清楚，语速适中，像在给朋友讲一个好用的东西", "seed": 7, "speed": 1.0, "language": "zh", "model": "qwen3-tts-customvoice-q8", **(cfg.get("voice") or {})}
+V = {"speaker": "Dylan", "description": "产品介绍视频的旁白，亲切自然，吐字清楚，语速适中，像在给朋友讲一个好用的东西", "seed": 7, "speed": 1.0, "language": "zh", "model": "qwen3-tts-customvoice-q8", **(cfg.get("voice") or {})}
 L = json.loads((P / "lines.json").read_text())
 idx = [int(a) for a in args if a.isdigit()] or range(1, len(L) + 1)
 BIN = next((b for b in [os.environ.get("YOVOICE_BIN"), shutil.which("yovoice"), str(Path.home() / ".local/opt/yovoice/yovoice")] if b and Path(b).exists()), None)

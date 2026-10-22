@@ -13,14 +13,14 @@
 `config.json` 的 `voice`：
 
 ```json
-"voice": { "speaker": "Serena", "description": "产品介绍视频的旁白，亲切自然，吐字清楚，语速适中", "seed": 7, "speed": 1.08, "seeds": { "6": 42 } }
+"voice": { "speaker": "Dylan", "description": "产品介绍视频的旁白，亲切自然，吐字清楚，语速适中", "seed": 7, "speed": 1.08, "seeds": { "6": 42 } }
 ```
 
 | 音色 | 声音 |
 |---|---|
-| `Serena` | 温和的年轻女声，咬字最稳（默认） |
+| `Serena` | 温和的年轻女声。用户反馈听着很怪，不再使用 |
 | `Vivian` | 明亮、有个性的年轻女声 |
-| `Dylan` | 清亮的年轻男声（略带京腔，description 里写「标准普通话，没有儿化音」能压一些） |
+| `Dylan` | 中文默认。清亮的年轻男声（略带京腔，description 里写「标准普通话，没有儿化音」能压一些） |
 | `Uncle_Fu` | 低沉的成熟男声，偏慢 |
 
 `Eric` 有成都口音，别用。`description` 影响语气，不换音色。`speed` 是后处理变速（音调不变），产品介绍 1.05–1.1 比较利落。每句 4–10 秒，M 系列 Mac 上一句约 5–15 秒。
