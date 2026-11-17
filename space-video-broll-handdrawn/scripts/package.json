@@ -1,0 +1,9 @@
+{
+  "name": "space-video-broll-handdrawn",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "roughjs": "4.6.6",
+    "subset-font": "2.4.0"
+  }
+}

@@ -84,6 +84,23 @@ bash scripts/assets/fetch_audio.sh     # 下载配乐和音效（Mixkit）
 
 例子里用到的第三方截图和视频片段不随仓库分发，重做时按各例子 README 里的说明重新抓。
 
+## 子 Skill：手绘风口播 B-roll
+
+[space-video-broll-handdrawn](space-video-broll-handdrawn) 把同一套手绘画面用在已经剪好字幕和音频的口播视频上：讲到一个概念，画面中间贴上一张纸卡，标题逐字手写、框和箭头一笔笔画出，讲到哪一项就点亮哪一项，讲完再抽走。卡片落在字幕上方、避开人像窗，音效按原片人声峰值自动压低 17dB。六种纸面：白板、笔记本、黑板、蓝图、牛皮纸、宣纸。
+
+```
+口播原片 → 逐字稿 → beats.mjs（每段一张纸）→ HyperFrames 渲透明 MOV → ffmpeg 贴回原片混音
+```
+
+安装（在上面 clone 完之后）：
+
+```bash
+ln -s ~/.claude/skills/space-handdrawn-motion-video/space-video-broll-handdrawn ~/.claude/skills/space-video-broll-handdrawn
+npm i --prefix ~/.claude/skills/space-video-broll-handdrawn/scripts   # roughjs、subset-font
+```
+
+还需要：ffmpeg、HyperFrames CLI（`npx hyperframes`）、whisper.cpp（逐字稿）。在 Claude Code 里说「给这条口播加手绘 B-roll」就会触发，写法见 [SKILL.md](space-video-broll-handdrawn/SKILL.md) 和 [组件说明](space-video-broll-handdrawn/references/dsl.md)。
+
 ## 授权
 
 代码 MIT。字体 [小赖 Xiaolai](https://github.com/lxgw/kose-font)，SIL OFL 1.1（[assets/fonts/OFL.txt](assets/fonts/OFL.txt)）。配乐和音效来自 [Mixkit](https://mixkit.co/license/)，免费可商用，但不允许再分发原文件，所以由 `fetch_audio.sh` 下载，不放进仓库。演示视频里引用的 YouTube 片段版权归原作者，画面下已标注出处。
