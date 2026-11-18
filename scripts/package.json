@@ -5,5 +5,10 @@
   "dependencies": {
     "puppeteer-core": "^23.11.1",
     "roughjs": "4.6.6"
+  },
+  "overrides": {
+    "get-uri": {
+      "basic-ftp": "6.2.4"
+    }
   }
 }
