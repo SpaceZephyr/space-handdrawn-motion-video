@@ -21,6 +21,15 @@ function along(segs, q) {
 const fmt = (v) => Math.round(v).toLocaleString("en-US");
 
 CARDS.forEach((c) => {
+  if (c.full) {
+    // 全屏白底：白纸只在一串连续段落的首尾淡入淡出，内容每段自己进出
+    const bg = "#" + c.id + " .sheet, #" + c.id + " .holeframe", st = "#" + c.id + " .stage";
+    if (c.fin) tl.fromTo(bg, { opacity: 0 }, { opacity: 1, duration: 0.35, ease: "power1.out" }, c.s);
+    if (c.fout) tl.to(bg, { opacity: 0, duration: 0.35, ease: "power1.in" }, c.e - 0.4);
+    tl.fromTo(st, { opacity: 0, y: 24 }, { opacity: 1, y: 0, duration: 0.4, ease: "power2.out" }, c.s + (c.fin ? 0.12 : 0));
+    tl.to(st, { opacity: 0, y: -20, duration: 0.3, ease: "power2.in" }, c.e - 0.4);
+    return;
+  }
   const card = "#" + c.id + " .card";
   tl.fromTo(card, { opacity: 0, y: 90, rotation: c.rot - 3.5, scale: 0.93 }, { opacity: 1, y: 0, rotation: c.rot, scale: 1, duration: 0.62, ease: "back.out(1.5)" }, c.s);
   tl.to(card, { opacity: 0, y: -46, rotation: c.rot + 2, scale: 0.96, duration: 0.4, ease: "power2.in" }, c.e - 0.45);

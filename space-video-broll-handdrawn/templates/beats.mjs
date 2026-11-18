@@ -7,6 +7,7 @@ export default {
   safe: { x: __SX__, y: __SY__, w: __SW__, h: __SH__ },   // 卡片在原片里的位置（避开字幕和人像）
   theme: "whiteboard",                          // whiteboard notebook chalkboard blueprint kraft inkwash
   accent: null,                                 // null = 用纸面自带的强调色；做品牌内容时填品牌色
+  pen: false,                                   // 不显示跟着笔尖走的笔（用户偏好）
   sfx: { below: 17 },                           // 音效峰值比人声峰值低 17dB；sfx: false 全关
   beats: [
     {

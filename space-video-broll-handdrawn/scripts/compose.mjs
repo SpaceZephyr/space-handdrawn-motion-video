@@ -31,7 +31,8 @@ const args = ["-y", "-i", src, "-i", broll, ...files.flatMap((f) => ["-i", join(
 const fi = Object.fromEntries(files.map((f, i) => [f, i + 2]));
 const g = [];
 g.push(`[1:v]split=${beats.length}${beats.map((_, i) => `[s${i}]`).join("")}`);
-beats.forEach((b, i) => g.push(`[s${i}]trim=start=${b.start}:end=${(b.start + b.dur).toFixed(3)},setpts=PTS-STARTPTS+${b.at}/TB[b${i}]`));
+// trim 多留 0.1s：B-roll 30fps、原片 60fps 时，段尾最后半帧会没有画面盖着，全屏白底相邻两段之间会闪一帧原片；显示范围仍由下面的 enable 控制
+beats.forEach((b, i) => g.push(`[s${i}]trim=start=${b.start}:end=${(b.start + b.dur + 0.1).toFixed(3)},setpts=PTS-STARTPTS+${b.at}/TB[b${i}]`));
 let last = "0:v";
 beats.forEach((b, i) => { const o = i === beats.length - 1 ? "vout" : `v${i}`; g.push(`[${last}][b${i}]overlay=x=${X}:y=${Y}:eof_action=pass:enable='between(t,${b.at},${(b.at + b.dur).toFixed(3)})'[${o}]`); last = o; });
 let amap = "0:a";

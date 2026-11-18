@@ -7,6 +7,8 @@ export default {
   safe: { x: 120, y: 326, w: 1400, h: 1180 },    // 卡片在原片里的位置
   theme: "whiteboard",                           // whiteboard notebook chalkboard blueprint kraft inkwash
   accent: null,                                  // null 用纸面自带强调色；品牌内容填品牌色
+  pen: false,                                    // 可选：整条不显示跟着笔尖走的笔（默认显示）
+  full: { hole: { x: 978, y: 1494, w: 571, h: 570, r: 128 }, scale: 1.15, top: 150 },  // 可选：全屏白底，只露人像窗
   sfx: { below: 17 },                            // false 全关；in:false 关入场声；rel:{ding:.5} 调单个音效
   beats: [ ... ],
 };
@@ -55,7 +57,7 @@ export default {
 | `hide(id 们, { t })` | 淡出（比如印章演完、让位给下一个画面） |
 | `tint(id 们, { t, color })` | 线和字变成强调色 |
 **id 前缀匹配**：`focus("s0", ...)` 会同时作用于 `s0`、`s0-l`（标签）、`s0-i`、`s0-r`……一组元素用同一个前缀起名，就能一起点亮/隐藏。
-图标（100×100 网格，`size` 是像素）：`folder` `doc` `user` `users` `cloud` `gear` `bolt` `chat` `laptop` `phone` `db` `lock` `star` `clock` `branch` `bulb` `bot` `globe` `search` `video` `chart` `link` `box` `code` `mail` `heart` `flag` `terminal`。要新图标就在 `scripts/hd.mjs` 的 `ICONS` 里加一项（只用 M L H V C Q Z，不用 A）。
+图标（100×100 网格，`size` 是像素）：`folder` `doc` `user` `users` `cloud` `gear` `bolt` `chat` `laptop` `phone` `db` `lock` `star` `clock` `branch` `bulb` `bot` `globe` `search` `video` `chart` `link` `box` `code` `mail` `heart` `flag` `terminal` `book` `target` `calendar`。要新图标就在 `scripts/hd.mjs` 的 `ICONS` 里加一项（只用 M L H V C Q Z，不用 A）。
 ## 字号（卡片 1400 宽时）
 | 用途 | 字号 |
 |---|---|
